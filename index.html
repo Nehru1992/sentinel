@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sentinel</title>
+<style>
+  :root {
+    --bg: #0a0e14;
+    --card: #121822;
+    --borda: #1f2937;
+    --texto: #e5e7eb;
+    --suave: #8b95a5;
+    --destaque: #22d3ee;
+    --seguro: #22c55e;
+    --suspeito: #f59e0b;
+    --perigoso: #ef4444;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: radial-gradient(circle at 50% -20%, #0f2a33 0%, var(--bg) 55%);
+    color: var(--texto);
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    min-height: 100vh;
+    padding: 48px 16px;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; }
+  header { text-align: center; margin-bottom: 36px; }
+  .logo {
+    display: inline-flex; align-items: center; gap: 10px;
+    font-size: 30px; font-weight: 700; letter-spacing: 3px;
+  }
+  .logo svg { width: 34px; height: 34px; }
+  header p { color: var(--suave); margin-top: 10px; }
+
+  .busca {
+    background: var(--card); border: 1px solid var(--borda);
+    border-radius: 14px; padding: 20px;
+  }
+  .linha { display: flex; gap: 10px; }
+  input {
+    flex: 1; min-width: 0; background: var(--bg); color: var(--texto);
+    border: 1px solid var(--borda); border-radius: 10px;
+    padding: 14px; font-size: 15px; font-family: Consolas, monospace;
+  }
+  input:focus { outline: none; border-color: var(--destaque); }
+  button.analisar {
+    background: var(--destaque); color: #031016; border: none;
+    border-radius: 10px; padding: 0 22px; font-weight: 700;
+    font-size: 15px; cursor: pointer;
+  }
+  button.analisar:hover { filter: brightness(1.1); }
+  .exemplos { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .exemplos span { color: var(--suave); font-size: 13px; }
+  .chip {
+    background: transparent; color: var(--suave);
+    border: 1px solid var(--borda); border-radius: 999px;
+    padding: 5px 12px; font-size: 12px; cursor: pointer;
+    font-family: Consolas, monospace;
+  }
+  .chip:hover { color: var(--texto); border-color: var(--destaque); }
+
+  .resultado {
+    margin-top: 24px; background: var(--card);
+    border: 1px solid var(--borda); border-radius: 14px;
+    padding: 24px; display: none;
+  }
+  .resultado.visivel { display: block; animation: surgir .35s ease; }
+  @keyframes surgir { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  .topo { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .veredito { font-size: 28px; font-weight: 800; letter-spacing: 2px; }
+  .pontos { color: var(--suave); font-size: 14px; }
+  .pontos b { color: var(--texto); font-size: 22px; }
+  .url-analisada {
+    margin-top: 6px; color: var(--suave); font-family: Consolas, monospace;
+    font-size: 13px; word-break: break-all;
+  }
+  .barra { margin-top: 18px; height: 10px; background: var(--bg); border-radius: 999px; overflow: hidden; }
+  .preenchimento { height: 100%; width: 0; border-radius: 999px; transition: width .6s ease; }
+  .faixas { position: relative; height: 16px; font-size: 11px; color: var(--suave); margin-top: 6px; }
+  .faixas span { position: absolute; white-space: nowrap; }
+
+  h3 { margin-top: 24px; font-size: 13px; letter-spacing: 1.5px; color: var(--suave); text-transform: uppercase; }
+  ul { list-style: none; margin-top: 10px; display: grid; gap: 8px; }
+  li {
+    display: flex; gap: 12px; align-items: flex-start;
+    background: var(--bg); border: 1px solid var(--borda);
+    border-left: 3px solid var(--cor, var(--suspeito));
+    border-radius: 10px; padding: 12px 14px; font-size: 14px; line-height: 1.45;
+  }
+  li .peso {
+    margin-left: auto; color: var(--suave); font-size: 12px;
+    white-space: nowrap; font-family: Consolas, monospace;
+  }
+  .nenhum { --cor: var(--seguro); }
+  footer { text-align: center; color: var(--suave); font-size: 12px; margin-top: 32px; }
+  @media (max-width: 520px) {
+    .linha { flex-direction: column; }
+    button.analisar { padding: 14px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#22d3ee" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2l8 4v6c0 5-3.5 9-8 10-4.5-1-8-5-8-10V6l8-4z"/>
+        <path d="M9 12l2 2 4-4"/>
+      </svg>
+      SENTINEL
+    </div>
+    <p>Cole o link suspeito <strong>antes de clicar</strong>. O Sentinel analisa sem abrir.</p>
+  </header>
+
+  <div class="busca">
+    <div class="linha">
+      <input id="url" type="text" placeholder="https://exemplo.com/link-que-chegou-no-whatsapp" autocomplete="off">
+      <button class="analisar" id="btn">Analisar</button>
+    </div>
+    <div class="exemplos">
+      <span>Exemplos fictícios:</span>
+      <button class="chip">https://www.google.com</button>
+      <button class="chip">http://bit.ly/premio-gratis</button>
+      <button class="chip">https://golpeitau.example/login</button>
+      <button class="chip">https://itau.com.br.golpe.example</button>
+    </div>
+  </div>
+
+  <div class="resultado" id="resultado">
+    <div class="topo">
+      <div class="veredito" id="veredito"></div>
+      <div class="pontos">Pontuação de risco: <b id="pontos"></b></div>
+    </div>
+    <div class="url-analisada" id="urlAnalisada"></div>
+    <div class="barra"><div class="preenchimento" id="preenchimento"></div></div>
+    <div class="faixas"><span style="left:0">0 · Seguro</span><span style="left:20%">20 · Suspeito</span><span style="left:45%">45+ · Perigoso</span></div>
+    <h3>Alertas encontrados</h3>
+    <ul id="alertas"></ul>
+  </div>
+
+  <footer>Projeto de estudo em segurança da informação · Analisa só o texto do link, sem abri-lo · Não substitui um antivírus</footer>
+</div>
+
+<script>
+// Mesmas regras do sentinel.py, escritas em JavaScript
+const ENCURTADORES = ["bit.ly", "tinyurl.com", "cutt.ly", "encurtador.com.br", "t.co"];
+const PALAVRAS_ISCA = ["login", "verificar", "atualizar", "senha", "premio", "gratis", "bloqueado", "seguranca"];
+const MARCAS = {
+  itau: "itau.com.br", bradesco: "bradesco.com.br", nubank: "nubank.com.br",
+  caixa: "caixa.gov.br", correios: "correios.com.br", netflix: "netflix.com",
+  paypal: "paypal.com", mercadolivre: "mercadolivre.com.br"
+};
+
+function pegarDominio(url) {
+  return url.replace("https://", "").replace("http://", "").split("/")[0];
+}
+
+const REGRAS = [
+  { peso: 35, texto: "Imita uma marca conhecida, mas o domínio não é o oficial.",
+    testa: url => {
+      const d = pegarDominio(url);
+      return Object.keys(MARCAS).some(m => url.includes(m) && !(d === MARCAS[m] || d.endsWith("." + MARCAS[m])));
+    } },
+  { peso: 25, texto: "Usa números de IP no lugar do nome do site: muito usado em golpes.",
+    testa: url => { const p = pegarDominio(url).split("."); return p.length === 4 && p.every(x => /^\d+$/.test(x)); } },
+  { peso: 20, texto: "É um link encurtado: esconde para onde você vai de verdade.",
+    testa: url => ENCURTADORES.includes(pegarDominio(url)) },
+  { peso: 20, texto: "Tem '@' no endereço: truque para te levar a outro site.",
+    testa: url => url.includes("@") },
+  { peso: 15, texto: "Não usa HTTPS: os dados viajam sem proteção.",
+    testa: url => !url.startsWith("https") },
+  { peso: 15, texto: "Tem subdomínios demais: tenta parecer o site oficial.",
+    testa: url => (pegarDominio(url).match(/\./g) || []).length > 3 },
+  { peso: 10, texto: "Usa palavras-isca (login, prêmio, senha...) para te apressar.",
+    testa: url => PALAVRAS_ISCA.some(p => url.includes(p)) },
+  { peso: 5, texto: "Endereço muito longo: dificulta ver o domínio verdadeiro.",
+    testa: url => url.length > 75 }
+];
+
+function classificar(p) {
+  if (p >= 45) return { nome: "PERIGOSO", cor: "var(--perigoso)" };
+  if (p >= 20) return { nome: "SUSPEITO", cor: "var(--suspeito)" };
+  return { nome: "SEGURO", cor: "var(--seguro)" };
+}
+
+function analisar() {
+  const url = document.getElementById("url").value.trim().toLowerCase();
+  if (!url) return;
+  const disparadas = REGRAS.filter(r => r.testa(url));
+  const pontos = disparadas.reduce((soma, r) => soma + r.peso, 0);
+  const c = classificar(pontos);
+
+  document.getElementById("veredito").textContent = c.nome;
+  document.getElementById("veredito").style.color = c.cor;
+  document.getElementById("pontos").textContent = pontos;
+  document.getElementById("urlAnalisada").textContent = url;
+  const barra = document.getElementById("preenchimento");
+  barra.style.background = c.cor;
+  barra.style.width = "0";
+  requestAnimationFrame(() => { barra.style.width = Math.min(pontos, 100) + "%"; });
+
+  const lista = document.getElementById("alertas");
+  lista.innerHTML = "";
+  if (disparadas.length === 0) {
+    const li = document.createElement("li");
+    li.className = "nenhum";
+    li.textContent = "Nenhum alerta encontrado no texto da URL.";
+    lista.appendChild(li);
+  } else {
+    disparadas.forEach(r => {
+      const li = document.createElement("li");
+      li.style.setProperty("--cor", r.peso >= 25 ? "var(--perigoso)" : "var(--suspeito)");
+      const t = document.createElement("span");
+      t.textContent = r.texto;
+      const peso = document.createElement("span");
+      peso.className = "peso";
+      peso.textContent = "+" + r.peso;
+      li.append(t, peso);
+      lista.appendChild(li);
+    });
+  }
+  const res = document.getElementById("resultado");
+  res.classList.remove("visivel");
+  void res.offsetWidth;
+  res.classList.add("visivel");
+}
+
+document.getElementById("btn").addEventListener("click", analisar);
+document.getElementById("url").addEventListener("keydown", e => { if (e.key === "Enter") analisar(); });
+document.querySelectorAll(".chip").forEach(ch => ch.addEventListener("click", () => {
+  document.getElementById("url").value = ch.textContent;
+  analisar();
+}));
+</script>
+</body>
+</html>
